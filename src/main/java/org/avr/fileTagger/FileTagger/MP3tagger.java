@@ -7,6 +7,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.Optional;
 
 import org.apache.derby.shared.common.error.DerbySQLIntegrityConstraintViolationException;
@@ -16,9 +17,11 @@ import org.jaudiotagger.audio.AudioHeader;
 import org.jaudiotagger.audio.exceptions.CannotReadException;
 import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
 import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
+import org.jaudiotagger.audio.mp3.MP3File;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagException;
+import org.jaudiotagger.tag.TagField;
 
 public class MP3tagger {
 	
@@ -113,6 +116,10 @@ public class MP3tagger {
 		
 		try {
 			AudioFile f = AudioFileIO.read(file);
+			
+//			if ( ((MP3File)f).hasID3v1Tag() ) System.out.println("It has V1 tags");
+//			if ( ((MP3File)f).hasID3v2Tag() ) System.out.println("It has V2 tags");
+			
 			readTags(f);
 		} catch (CannotReadException crEx) {
 		}
@@ -123,22 +130,29 @@ public class MP3tagger {
 	private void readTags(AudioFile audioF) {
 		Tag tag = audioF.getTag();
 		
+//		System.out.println( indent(4) +"         : "+ tag.getFieldCount());
 //		System.out.println( indent(4) +"  Artist : "+ tag.getFirst(FieldKey.ARTIST));
 //		System.out.println( indent(4) +"   Album : "+ tag.getFirst(FieldKey.ALBUM));
 //		System.out.println( indent(4) +"   Title : "+ tag.getFirst(FieldKey.TITLE));
+//		System.out.println( indent(4) +"   Track : "+ tag.getFirst(FieldKey.TRACK) +" of "+ tag.getFirst(FieldKey.TRACK_TOTAL));
 		
-		MP3tags tags = new MP3tags();
-		tags.setAlbum( tag.getFirst(FieldKey.ALBUM ) );
-		tags.setArtist( tag.getFirst(FieldKey.ARTIST ) );
-		tags.setTitle( tag.getFirst(FieldKey.TITLE ) );
-		tags.setFileLocation( audioF.getFile().getAbsolutePath() );
-		
-		try {
-			DB.storeTags(tags);
-		} catch (DerbySQLIntegrityConstraintViolationException duplicate) {
-			System.out.println("DUPLICATE : "+ audioF.getFile().getAbsolutePath() );
-		} catch (SQLException sqlEx) {
-			sqlEx.printStackTrace();
+		for (FieldKey fieldKey : FieldKey.values()) {
+			System.out.println( fieldKey +" - "+ tag.getFirst(fieldKey) );
 		}
+		
+		//   Write to DB
+//		MP3tags tags = new MP3tags();
+//		tags.setAlbum( tag.getFirst(FieldKey.ALBUM ) );
+//		tags.setArtist( tag.getFirst(FieldKey.ARTIST ) );
+//		tags.setTitle( tag.getFirst(FieldKey.TITLE ) );
+//		tags.setFileLocation( audioF.getFile().getAbsolutePath() );
+//		
+//		try {
+//			DB.storeTags(tags);
+//		} catch (DerbySQLIntegrityConstraintViolationException duplicate) {
+//			System.out.println("DUPLICATE : "+ audioF.getFile().getAbsolutePath() );
+//		} catch (SQLException sqlEx) {
+//			sqlEx.printStackTrace();
+//		}
 	}
 }
